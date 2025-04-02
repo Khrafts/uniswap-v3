@@ -30,10 +30,6 @@ contract UniswapV3PoolTest is Test {
         token1 = new ERC20Mintable("USDC", "USDC", 18);
     }
 
-    function testExample() public {
-        assertTrue(true);
-    }
-
     function testMintSuccess() public {
         TestCaseParams memory params = TestCaseParams({
             wethBalance: 1 ether,
@@ -77,6 +73,74 @@ contract UniswapV3PoolTest is Test {
         assertEq(pool.liquidity(), params.liquidity, "incorrect liquidity");
     }
 
+    function testMintInvlaidTickRangeLower() public {
+        pool = new UniswapV3Pool(
+            address(token0),
+            address(token1),
+            uint160(1),
+            0
+        );
+
+        vm.expectRevert(UniswapV3Pool.InvalidTickRange.selector);
+        pool.mint(address(this), -887273, 0, 0);
+    }
+
+    function testMintInvlaidTickRangeUpper() public {
+        pool = new UniswapV3Pool(
+            address(token0),
+            address(token1),
+            uint160(1),
+            0
+        );
+
+        vm.expectRevert(UniswapV3Pool.InvalidTickRange.selector);
+        pool.mint(address(this), 0, 887273, 0);
+    }
+
+    function testMintInvalidTickRangeSame() public {
+         pool = new UniswapV3Pool(
+            address(token0),
+            address(token1),
+            uint160(1),
+            0
+        );
+
+        vm.expectRevert(UniswapV3Pool.InvalidTickRange.selector);
+        pool.mint(address(this), 0, 0, 0);
+    }
+
+    function testMintZeroLiquidity() public {
+        pool = new UniswapV3Pool(
+            address(token0),
+            address(token1),
+            uint160(1),
+            0
+        );
+
+        vm.expectRevert(UniswapV3Pool.ZeroLiquidity.selector);
+        pool.mint(address(this), 0, 1, 0);
+    }
+
+    function testMintInsufficientInputAmount() public {
+        TestCaseParams memory params = TestCaseParams({
+            wethBalance: 1 ether,
+            usdcBalance: 5000 ether,
+            currentTick: 85176,
+            lowerTick: 84222,
+            upperTick: 86129,
+            liquidity: 1517882343751509868544,
+            currentSqrtP: 5602277097478614198912276234240,
+            shouldTransferInCallback: false,
+            mintLiquidity: true
+        });
+
+        setupTestCase(params);
+
+        vm.expectRevert(UniswapV3Pool.InsufficientInputAmount.selector);
+        pool.mint(address(this), params.lowerTick, params.upperTick, params.liquidity);
+    }
+
+
     function setupTestCase(TestCaseParams memory params)
         internal
         returns (uint256 poolBalance0, uint256 poolBalance1)
@@ -98,6 +162,16 @@ contract UniswapV3PoolTest is Test {
         if (shouldTransferInCallback) {
             token0.transfer(msg.sender, amount0);
             token1.transfer(msg.sender, amount1);
+        }
+    }
+
+    function uniswapV3SwapCallback(int256 amount0, int256 amount1) public {
+        if (amount0 > 0) {
+            token0.transfer(msg.sender, uint256(amount0));
+        }
+
+        if (amount1 > 0) {
+            token1.transfer(msg.sender, uint256(amount1));
         }
     }
 }
