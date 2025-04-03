@@ -18,12 +18,7 @@ contract DeployDevelopment is Script {
         ERC20Mintable token0 = new ERC20Mintable("Wrapped Ether", "WETH", 18);
         ERC20Mintable token1 = new ERC20Mintable("USD Coin", "USDC", 18);
 
-        UniswapV3Pool pool = new UniswapV3Pool(
-            address(token0),
-            address(token1),
-            currentSqrtP,
-            currentTick
-        );
+        UniswapV3Pool pool = new UniswapV3Pool(address(token0), address(token1), currentSqrtP, currentTick);
 
         UniswapV3Manager manager = new UniswapV3Manager();
 
