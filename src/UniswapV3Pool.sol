@@ -3,6 +3,7 @@ pragma solidity ^0.8.14;
 
 import {Tick} from "./lib/Tick.sol";
 import {Position} from "./lib/Position.sol";
+import {TickBitmap} from "./lib/TickBitmap.sol";
 
 import {IERC20} from "./interfaces/IERC20.sol";
 import {IUniswapV3MintCallback} from "./interfaces/IUniswapV3MintCallback.sol";
@@ -10,6 +11,7 @@ import {IUniswapV3SwapCallback} from "./interfaces/IUniswapV3SwapCallback.sol";
 
 contract UniswapV3Pool {
     using Tick for mapping(int24 => Tick.Info);
+    using TickBitmap for mapping(int16 => uint256);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
 
@@ -64,6 +66,8 @@ contract UniswapV3Pool {
 
     // Ticks info
     mapping(int24 => Tick.Info) public ticks;
+    // Ticks bitmap
+    mapping(int16 => uint256) public tickBitmap;
     // Positions info
     mapping(bytes32 => Position.Info) public positions;
 
@@ -82,8 +86,15 @@ contract UniswapV3Pool {
 
         if (amount == 0) revert ZeroLiquidity();
 
-        ticks.update(lowerTick, amount);
-        ticks.update(upperTick, amount);
+        bool flippedLower = ticks.update(lowerTick, amount);
+        bool flippedUpper = ticks.update(upperTick, amount);
+
+        if (flippedLower) {
+            tickBitmap.flipTick(lowerTick, 1);
+        }
+        if (flippedUpper) {
+            tickBitmap.flipTick(upperTick, 1);
+        }
 
         Position.Info storage position = positions.get(owner, lowerTick, upperTick);
 
