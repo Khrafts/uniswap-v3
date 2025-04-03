@@ -2,8 +2,10 @@
 pragma solidity ^0.8.14;
 
 import {Tick} from "./lib/Tick.sol";
+import {TickMath} from "./lib/TickMath.sol";
 import {Position} from "./lib/Position.sol";
 import {TickBitmap} from "./lib/TickBitmap.sol";
+import {Math} from "./lib/Math.sol";
 
 import {IERC20} from "./interfaces/IERC20.sol";
 import {IUniswapV3MintCallback} from "./interfaces/IUniswapV3MintCallback.sol";
@@ -100,8 +102,18 @@ contract UniswapV3Pool {
 
         position.update(amount);
 
-        amount0 = 0.99897661834742528 ether;
-        amount1 = 5000 ether;
+        Slot0 memory slot0_ = slot0;
+
+        amount0 = Math.calcAmount0Delta(
+            slot0_.sqrtPriceX96,
+            TickMath.getSqrtRatioAtTick(upperTick),
+            amount
+        );
+        amount1 = Math.calcAmount1Delta(
+            slot0_.sqrtPriceX96,
+            TickMath.getSqrtRatioAtTick(lowerTick),
+            amount
+        );
 
         liquidity += uint128(amount);
 
