@@ -7,12 +7,16 @@ import "../src/interfaces/IERC20.sol";
 contract UniswapV3Manager {
     function mint(address poolAddress, int24 lowerTick, int24 upperTick, uint128 liquidity, bytes calldata data)
         public
+        returns (uint256, uint256)
     {
-        UniswapV3Pool(poolAddress).mint(msg.sender, lowerTick, upperTick, liquidity, data);
+        return UniswapV3Pool(poolAddress).mint(msg.sender, lowerTick, upperTick, liquidity, data);
     }
 
-    function swap(address poolAddress, bool zeroForOne, uint256 amountSpecified, bytes calldata data) public {
-        UniswapV3Pool(poolAddress).swap(msg.sender, zeroForOne, amountSpecified, data);
+    function swap(address poolAddress, bool zeroForOne, uint256 amountSpecified, bytes calldata data)
+        public
+        returns (int256, int256)
+    {
+        return UniswapV3Pool(poolAddress).swap(msg.sender, zeroForOne, amountSpecified, data);
     }
 
     function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes calldata data) external {
