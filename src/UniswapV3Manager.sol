@@ -11,8 +11,8 @@ contract UniswapV3Manager {
         UniswapV3Pool(poolAddress).mint(msg.sender, lowerTick, upperTick, liquidity, data);
     }
 
-    function swap(address poolAddress, bytes calldata data) public {
-        UniswapV3Pool(poolAddress).swap(msg.sender, data);
+    function swap(address poolAddress, bool zeroForOne, uint256 amountSpecified, bytes calldata data) public {
+        UniswapV3Pool(poolAddress).swap(msg.sender, zeroForOne, amountSpecified, data);
     }
 
     function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes calldata data) external {
