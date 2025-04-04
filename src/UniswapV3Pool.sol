@@ -7,6 +7,7 @@ import {Position} from "./lib/Position.sol";
 import {TickBitmap} from "./lib/TickBitmap.sol";
 import {SwapMath} from "./lib/SwapMath.sol";
 import {Math} from "./lib/Math.sol";
+import {LiquidityMath} from "./lib/LiquidityMath.sol";
 
 import {IERC20} from "./interfaces/IERC20.sol";
 import {IUniswapV3MintCallback} from "./interfaces/IUniswapV3MintCallback.sol";
@@ -119,15 +120,25 @@ contract UniswapV3Pool {
         position.update(amount);
 
         Slot0 memory slot0_ = slot0;
-
-        amount0 = Math.calcAmount0Delta(
-            TickMath.getSqrtRatioAtTick(slot0_.tick), TickMath.getSqrtRatioAtTick(upperTick), amount
-        );
-        amount1 = Math.calcAmount1Delta(
-            TickMath.getSqrtRatioAtTick(slot0_.tick), TickMath.getSqrtRatioAtTick(lowerTick), amount
-        );
-
-        liquidity += uint128(amount);
+        if (slot0_.tick < lowerTick) {
+            amount0 = Math.calcAmount0Delta(
+                TickMath.getSqrtRatioAtTick(lowerTick), TickMath.getSqrtRatioAtTick(upperTick), amount
+            );
+        } else if (slot0_.tick < upperTick) {
+            amount0 = Math.calcAmount0Delta(
+                TickMath.getSqrtRatioAtTick(slot0_.tick), TickMath.getSqrtRatioAtTick(upperTick), amount
+            );
+            amount1 = Math.calcAmount1Delta(
+                TickMath.getSqrtRatioAtTick(slot0_.tick), TickMath.getSqrtRatioAtTick(lowerTick), amount
+            );
+            liquidity = LiquidityMath.addLiquidity(liquidity, int128(amount));
+        } else {
+            amount1 = Math.calcAmount1Delta(
+                TickMath.getSqrtRatioAtTick(lowerTick),
+                TickMath.getSqrtRatioAtTick(upperTick), 
+                amount
+            );
+        }
 
         uint256 balance0Before;
         uint256 balance1Before;
