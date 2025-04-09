@@ -12,6 +12,7 @@ import {LiquidityMath} from "./lib/LiquidityMath.sol";
 import {IERC20} from "./interfaces/IERC20.sol";
 import {IUniswapV3MintCallback} from "./interfaces/IUniswapV3MintCallback.sol";
 import {IUniswapV3SwapCallback} from "./interfaces/IUniswapV3SwapCallback.sol";
+import {IUniswapV3FlashCallback} from "./interfaces/IUniswapV3FlashCallback.sol";
 
 contract UniswapV3Pool {
     using Tick for mapping(int24 => Tick.Info);
@@ -24,6 +25,8 @@ contract UniswapV3Pool {
     error InsufficientInputAmount();
     error NotEnoughLiquidity();
     error InvalidPriceLimit();
+
+    event Flash(address indexed recipient, uint256 amount0, uint256 amount1);
 
     event Mint(
         address caller,
@@ -173,7 +176,7 @@ contract UniswapV3Pool {
         if (
             zeroForOne
                 ? sqrtPriceLimitX96 > slot0_.sqrtPriceX96 || sqrtPriceLimitX96 < TickMath.MIN_SQRT_RATIO
-                : sqrtPriceLimitX96 < slot0_.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MAX_SQRT_RATIO
+                : sqrtPriceLimitX96 < slot0_.sqrtPriceX96 || sqrtPriceLimitX96 > TickMath.MAX_SQRT_RATIO
         ) revert InvalidPriceLimit();
 
         SwapState memory state = SwapState({
@@ -247,6 +250,25 @@ contract UniswapV3Pool {
         }
 
         emit Swap(msg.sender, recipient, amount0, amount1, slot0.sqrtPriceX96, liquidity, slot0.tick);
+    }
+
+    function flash(uint256 amount0, uint256 amount1, bytes calldata data) public {
+        uint256 balance0Before = balance0();
+        uint256 balance1Before = balance1();
+
+        if (amount0 > 0) {
+            IERC20(token0).transfer(msg.sender, amount0);
+        }
+        if (amount1 > 0) {
+            IERC20(token1).transfer(msg.sender, amount1);
+        }
+
+        IUniswapV3FlashCallback(msg.sender).uniswapV3FlashCallback(data);
+
+        require(IERC20(token0).balanceOf(address(this)) >= balance0Before);
+        require(IERC20(token1).balanceOf(address(this)) >= balance1Before);
+
+        emit Flash(msg.sender, amount0, amount1);
     }
 
     function balance0() internal view returns (uint256 balance) {
