@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.14;
+
 import {BytesLib} from "solidity-bytes-utils/BytesLib.sol";
 
 library BytesLibExt {
-    function toUint24(bytes memory _bytes, uint256 _start)
-        internal
-        pure
-        returns (uint24)
-    {
+    function toUint24(bytes memory _bytes, uint256 _start) internal pure returns (uint24) {
         require(_bytes.length >= _start + 3, "toUint24_outOfBounds");
         uint24 tempUint;
 
@@ -20,7 +17,6 @@ library BytesLibExt {
 }
 
 library Path {
-
     using BytesLib for bytes;
     using BytesLibExt for bytes;
 
@@ -46,14 +42,13 @@ library Path {
         return path.slice(NEXT_OFFSET, path.length - NEXT_OFFSET);
     }
 
-    function decodeFirstPool(bytes memory path) internal pure returns (
-        address tokenIn,
-        address tokenOut,
-        uint24 tickSpacing
-    ) {
+    function decodeFirstPool(bytes memory path)
+        internal
+        pure
+        returns (address tokenIn, address tokenOut, uint24 tickSpacing)
+    {
         tokenIn = path.toAddress(0);
         tickSpacing = path.toUint24(ADDR_SIZE);
         tokenOut = path.toAddress(NEXT_OFFSET);
     }
-
 }

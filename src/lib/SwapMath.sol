@@ -11,9 +11,6 @@ library SwapMath {
         uint256 amountRemaining
     ) internal pure returns (uint160 sqrtPriceNextX96, uint256 amountIn, uint256 amountOut) {
         bool zeroForOne = sqrtPriceCurrentX96 >= sqrtPriceTargetX96;
-
-        sqrtPriceNextX96 = Math.getNextSqrtPriceFromInput(sqrtPriceCurrentX96, liquidity, amountRemaining, zeroForOne);
-
         amountIn = zeroForOne
             ? Math.calcAmount0Delta(sqrtPriceCurrentX96, sqrtPriceTargetX96, liquidity)
             : Math.calcAmount1Delta(sqrtPriceCurrentX96, sqrtPriceTargetX96, liquidity);
