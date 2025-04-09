@@ -23,6 +23,7 @@ contract UniswapV3Pool {
     error ZeroLiquidity();
     error InsufficientInputAmount();
     error NotEnoughLiquidity();
+    error InvalidPriceLimit();
 
     event Mint(
         address caller,
@@ -137,9 +138,7 @@ contract UniswapV3Pool {
             liquidity = LiquidityMath.addLiquidity(liquidity, int128(amount));
         } else {
             amount1 = Math.calcAmount1Delta(
-                TickMath.getSqrtRatioAtTick(lowerTick),
-                TickMath.getSqrtRatioAtTick(upperTick), 
-                amount
+                TickMath.getSqrtRatioAtTick(lowerTick), TickMath.getSqrtRatioAtTick(upperTick), amount
             );
         }
 
@@ -161,12 +160,21 @@ contract UniswapV3Pool {
         emit Mint(msg.sender, owner, lowerTick, upperTick, amount, amount0, amount1);
     }
 
-    function swap(address recipient, bool zeroForOne, uint256 amountSpecified, bytes calldata data)
-        public
-        returns (int256 amount0, int256 amount1)
-    {
+    function swap(
+        address recipient,
+        bool zeroForOne,
+        uint256 amountSpecified,
+        uint160 sqrtPriceLimitX96,
+        bytes calldata data
+    ) public returns (int256 amount0, int256 amount1) {
         Slot0 memory slot0_ = slot0;
         uint128 liquidity_ = liquidity;
+
+        if (
+            zeroForOne
+                ? sqrtPriceLimitX96 > slot0_.sqrtPriceX96 || sqrtPriceLimitX96 < TickMath.MIN_SQRT_RATIO
+                : sqrtPriceLimitX96 < slot0_.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MAX_SQRT_RATIO
+        ) revert InvalidPriceLimit();
 
         SwapState memory state = SwapState({
             amountSpecifiedRemaining: amountSpecified,
@@ -176,7 +184,7 @@ contract UniswapV3Pool {
             liquidity: liquidity_
         });
 
-        while (state.amountSpecifiedRemaining > 0) {
+        while (state.amountSpecifiedRemaining > 0 && state.sqrtPriceX96 != sqrtPriceLimitX96) {
             StepState memory step;
 
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
@@ -185,21 +193,23 @@ contract UniswapV3Pool {
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.nextTick);
 
             (state.sqrtPriceX96, step.amountIn, step.amountOut) = SwapMath.computeSwapStep(
-                state.sqrtPriceX96, step.sqrtPriceNextX96, liquidity, state.amountSpecifiedRemaining
+                state.sqrtPriceX96,
+                (zeroForOne ? step.sqrtPriceNextX96 < sqrtPriceLimitX96 : step.sqrtPriceNextX96 > sqrtPriceLimitX96)
+                    ? sqrtPriceLimitX96
+                    : step.sqrtPriceNextX96,
+                state.liquidity,
+                state.amountSpecifiedRemaining
             );
 
             state.amountCalculated += step.amountOut;
             state.amountSpecifiedRemaining -= step.amountIn;
 
             // calculate liquidity delta if we move out of tick range
-            if(state.sqrtPriceX96 == step.sqrtPriceNextX96) {
+            if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 if (step.initialized) {
                     int128 liquidityDelta = ticks.cross(step.nextTick);
                     if (zeroForOne) liquidityDelta = -liquidityDelta;
-                    state.liquidity = LiquidityMath.addLiquidity(
-                        state.liquidity,
-                        liquidityDelta
-                    );
+                    state.liquidity = LiquidityMath.addLiquidity(state.liquidity, liquidityDelta);
 
                     if (state.liquidity == 0) revert NotEnoughLiquidity();
                 }
@@ -207,8 +217,6 @@ contract UniswapV3Pool {
             } else {
                 state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
             }
-
-
         }
         if (liquidity_ != state.liquidity) liquidity = state.liquidity;
 

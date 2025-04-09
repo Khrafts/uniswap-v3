@@ -28,7 +28,8 @@ library SwapMath {
         amountIn = Math.calcAmount0Delta(sqrtPriceCurrentX96, sqrtPriceNextX96, liquidity);
         amountOut = Math.calcAmount1Delta(sqrtPriceCurrentX96, sqrtPriceNextX96, liquidity);
 
-        if (!zeroForOne)
+        if (!zeroForOne) {
             (amountIn, amountOut) = (amountOut, amountIn);
+        }
     }
 }

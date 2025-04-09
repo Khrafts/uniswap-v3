@@ -69,11 +69,11 @@ contract UniswapV3PoolTest is Test {
         uint128 posLiquidity = pool.positions(positionKey);
         assertEq(posLiquidity, params.liquidity);
 
-        (bool tickInitialized, uint128 tickLiquidity, ) = pool.ticks(params.lowerTick);
+        (bool tickInitialized, uint128 tickLiquidity,) = pool.ticks(params.lowerTick);
         assertTrue(tickInitialized, "lower tick not initialized");
         assertEq(tickLiquidity, params.liquidity, "lower tick liquidity mismatch");
 
-        (tickInitialized, tickLiquidity, ) = pool.ticks(params.upperTick);
+        (tickInitialized, tickLiquidity,) = pool.ticks(params.upperTick);
         assertTrue(tickInitialized, "upper tick not initialized");
         assertEq(tickLiquidity, params.liquidity, "upper tick liquidity mismatch");
 
