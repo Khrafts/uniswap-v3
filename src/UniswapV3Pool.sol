@@ -13,6 +13,7 @@ import {IERC20} from "./interfaces/IERC20.sol";
 import {IUniswapV3MintCallback} from "./interfaces/IUniswapV3MintCallback.sol";
 import {IUniswapV3SwapCallback} from "./interfaces/IUniswapV3SwapCallback.sol";
 import {IUniswapV3FlashCallback} from "./interfaces/IUniswapV3FlashCallback.sol";
+import {IUniswapV3PoolDeployer} from "./interfaces/IUniswapV3PoolDeployer.sol";
 
 contract UniswapV3Pool {
     using Tick for mapping(int24 => Tick.Info);
@@ -20,6 +21,7 @@ contract UniswapV3Pool {
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
 
+    error AlreadyInitialized();
     error InvalidTickRange();
     error ZeroLiquidity();
     error InsufficientInputAmount();
@@ -74,9 +76,11 @@ contract UniswapV3Pool {
     int24 internal constant MIN_TICK = -887272;
     int24 internal constant MAX_TICK = -MIN_TICK;
 
-    // Pool tokens, immutable
+    // Pool parameters
+    address public immutable factory;
     address public immutable token0;
     address public immutable token1;
+    uint24 public immutable tickSpacing;
 
     struct Slot0 {
         // current sqrt(P)
@@ -97,11 +101,16 @@ contract UniswapV3Pool {
     // Positions info
     mapping(bytes32 => Position.Info) public positions;
 
-    constructor(address token0_, address token1_, uint160 sqrtPriceX96_, int24 tick) {
-        token0 = token0_;
-        token1 = token1_;
+    constructor() {
+        (factory, token0, token1, tickSpacing) = IUniswapV3PoolDeployer(msg.sender).parameters();
+    }
 
-        slot0 = Slot0({sqrtPriceX96: sqrtPriceX96_, tick: tick});
+    function initialize(uint160 sqrtPriceX96) public {
+        if (slot0.sqrtPriceX96 != 0) revert AlreadyInitialized();
+
+        int24 tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+
+        slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick});
     }
 
     function mint(address owner, int24 lowerTick, int24 upperTick, uint128 amount, bytes calldata data)
