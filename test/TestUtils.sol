@@ -58,8 +58,8 @@ abstract contract TestUtils is Test {
         assertEq(tickLiquidityGross, expected.positionLiquidity, "incorrect upper tick gross liquidity");
         assertEq(tickLiquidityNet, -int128(expected.positionLiquidity), "incorrect upper tick net liquidity");
 
-        // assertTrue(tickInBitMap(expected.pool, expected.lowerTick));
-        // assertTrue(tickInBitMap(expected.pool, expected.upperTick));
+        assertTrue(tickInBitMap(expected.pool, expected.lowerTick));
+        assertTrue(tickInBitMap(expected.pool, expected.upperTick));
 
         (uint160 sqrtPriceX96, int24 currentTick) = expected.pool.slot0();
         assertEq(sqrtPriceX96, expected.sqrtPriceX96, "invalid current sqrtP");
