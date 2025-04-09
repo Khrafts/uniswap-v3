@@ -39,17 +39,25 @@ contract UniswapV3Manager is IUniswapV3Manager {
         uint160 sqrtPriceLimitX96,
         bytes calldata data
     ) public returns (int256, int256) {
-        return UniswapV3Pool(poolAddress).swap(msg.sender, zeroForOne, amountSpecified, sqrtPriceLimitX96, data);
+        return IUniswapV3Pool(poolAddress).swap(
+            msg.sender,
+            zeroForOne,
+            amountSpecified,
+            sqrtPriceLimitX96 == 0
+                ? (zeroForOne ? TickMath.MIN_SQRT_RATIO + 1 : TickMath.MAX_SQRT_RATIO - 1)
+                : sqrtPriceLimitX96,
+            data
+        );
     }
 
     function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes calldata data) external {
-        UniswapV3Pool.CallbackData memory callbackData = abi.decode(data, (UniswapV3Pool.CallbackData));
+        IUniswapV3Pool.CallbackData memory callbackData = abi.decode(data, (IUniswapV3Pool.CallbackData));
         IERC20(callbackData.token0).transferFrom(callbackData.payer, msg.sender, amount0);
         IERC20(callbackData.token1).transferFrom(callbackData.payer, msg.sender, amount1);
     }
 
     function uniswapV3SwapCallback(int256 amount0, int256 amount1, bytes calldata data) external {
-        UniswapV3Pool.CallbackData memory callbackData = abi.decode(data, (UniswapV3Pool.CallbackData));
+        IUniswapV3Pool.CallbackData memory callbackData = abi.decode(data, (IUniswapV3Pool.CallbackData));
 
         if (amount0 > 0) {
             IERC20(callbackData.token0).transferFrom(callbackData.payer, msg.sender, uint256(amount0));
