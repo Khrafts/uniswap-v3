@@ -14,6 +14,8 @@ import {IUniswapV3MintCallback} from "./interfaces/IUniswapV3MintCallback.sol";
 import {IUniswapV3SwapCallback} from "./interfaces/IUniswapV3SwapCallback.sol";
 import {IUniswapV3FlashCallback} from "./interfaces/IUniswapV3FlashCallback.sol";
 
+import "forge-std/console.sol";
+
 contract UniswapV3Pool {
     using Tick for mapping(int24 => Tick.Info);
     using TickBitmap for mapping(int16 => uint256);
@@ -207,6 +209,8 @@ contract UniswapV3Pool {
             state.amountCalculated += step.amountOut;
             state.amountSpecifiedRemaining -= step.amountIn;
 
+            console.log("here");
+
             // calculate liquidity delta if we move out of tick range
             if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
                 if (step.initialized) {
@@ -214,12 +218,15 @@ contract UniswapV3Pool {
                     if (zeroForOne) liquidityDelta = -liquidityDelta;
                     state.liquidity = LiquidityMath.addLiquidity(state.liquidity, liquidityDelta);
 
+                    console.log(state.liquidity);
                     if (state.liquidity == 0) revert NotEnoughLiquidity();
                 }
                 state.tick = zeroForOne ? step.nextTick - 1 : step.nextTick;
             } else {
                 state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
             }
+
+            console.log("here 2");
         }
         if (liquidity_ != state.liquidity) liquidity = state.liquidity;
 

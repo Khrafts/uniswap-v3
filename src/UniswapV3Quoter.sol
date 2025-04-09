@@ -1,12 +1,14 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.14;
 
-import {IUniswapV3Pool} from "./interfaces/IUniswapV3Pool.sol";
+import "./interfaces/IUniswapV3Pool.sol";
+import "./lib/TickMath.sol";
 
 contract UniswapV3Quoter {
     struct QuoteParams {
         address pool;
         uint256 amountIn;
+        uint160 sqrtPriceLimitX96;
         bool zeroForOne;
     }
 
@@ -14,8 +16,15 @@ contract UniswapV3Quoter {
         public
         returns (uint256 amountOut, uint160 sqrtPriceX96After, int24 tickAfter)
     {
-        try IUniswapV3Pool(params.pool).swap(address(this), params.zeroForOne, params.amountIn, abi.encode(params.pool))
-        {} catch (bytes memory reason) {
+        try IUniswapV3Pool(params.pool).swap(
+            address(this),
+            params.zeroForOne,
+            params.amountIn,
+            params.sqrtPriceLimitX96 == 0
+                ? (params.zeroForOne ? TickMath.MIN_SQRT_RATIO + 1 : TickMath.MAX_SQRT_RATIO - 1)
+                : params.sqrtPriceLimitX96,
+            abi.encode(params.pool)
+        ) {} catch (bytes memory reason) {
             return abi.decode(reason, (uint256, uint160, int24));
         }
     }
