@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../../src/lib/Path.sol";
 
 contract PathTest is Test {
-    function testHasMultiplePools() public {
+    function testHasMultiplePools() public pure {
         bytes memory path = bytes.concat(bytes20(address(0x1)), bytes3(uint24(1)), bytes20(address(0x2)));
         assertFalse(Path.hasMultiplePools(path));
 
@@ -26,7 +26,7 @@ contract PathTest is Test {
         assertTrue(Path.hasMultiplePools(path));
     }
 
-    function testGetFirstPool() public {
+    function testGetFirstPool() public pure {
         bytes memory path = bytes.concat(bytes20(address(0x1)), bytes3(uint24(1)), bytes20(address(0x2)));
         assertEq(Path.getFirstPool(path), bytes.concat(bytes20(address(0x1)), bytes3(uint24(1)), bytes20(address(0x2))));
 
@@ -36,7 +36,7 @@ contract PathTest is Test {
         assertEq(Path.getFirstPool(path), bytes.concat(bytes20(address(0x1)), bytes3(uint24(1)), bytes20(address(0x2))));
     }
 
-    function testSkipToken() public {
+    function testSkipToken() public pure {
         bytes memory path = bytes.concat(bytes20(address(0x1)), bytes3(uint24(1)), bytes20(address(0x2)));
         assertEq(Path.skipToken(path), bytes.concat(bytes20(address(0x2))));
 
@@ -46,7 +46,7 @@ contract PathTest is Test {
         assertEq(Path.skipToken(path), bytes.concat(bytes20(address(0x2)), bytes3(uint24(2)), bytes20(address(0x3))));
     }
 
-    function testDecodeFirstPool() public {
+    function testDecodeFirstPool() public pure {
         bytes memory path = bytes.concat(bytes20(address(0x1)), bytes3(uint24(1)), bytes20(address(0x2)));
 
         (address tokenIn, address tokenOut, uint24 tickSpacing) = Path.decodeFirstPool(path);
@@ -55,7 +55,7 @@ contract PathTest is Test {
         assertEq(tickSpacing, uint24(1));
     }
 
-    function testNumPools() public {
+    function testNumPools() public pure {
         bytes memory path = bytes.concat(bytes20(address(0x1)), bytes3(uint24(1)), bytes20(address(0x2)));
 
         assertEq(Path.numPools(path), 1);
