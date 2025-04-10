@@ -125,10 +125,10 @@ contract UniswapV3Pool {
         bool flippedUpper = ticks.update(upperTick, int128(amount), true);
 
         if (flippedLower) {
-            tickBitmap.flipTick(lowerTick, 1);
+            tickBitmap.flipTick(lowerTick, int24(tickSpacing));
         }
         if (flippedUpper) {
-            tickBitmap.flipTick(upperTick, 1);
+            tickBitmap.flipTick(upperTick, int24(tickSpacing));
         }
 
         Position.Info storage position = positions.get(owner, lowerTick, upperTick);
@@ -141,12 +141,10 @@ contract UniswapV3Pool {
                 TickMath.getSqrtRatioAtTick(lowerTick), TickMath.getSqrtRatioAtTick(upperTick), amount
             );
         } else if (slot0_.tick < upperTick) {
-            amount0 = Math.calcAmount0Delta(
-                TickMath.getSqrtRatioAtTick(slot0_.tick), TickMath.getSqrtRatioAtTick(upperTick), amount
-            );
-            amount1 = Math.calcAmount1Delta(
-                TickMath.getSqrtRatioAtTick(slot0_.tick), TickMath.getSqrtRatioAtTick(lowerTick), amount
-            );
+            amount0 = Math.calcAmount0Delta(slot0_.sqrtPriceX96, TickMath.getSqrtRatioAtTick(upperTick), amount);
+
+            amount1 = Math.calcAmount1Delta(slot0_.sqrtPriceX96, TickMath.getSqrtRatioAtTick(lowerTick), amount);
+
             liquidity = LiquidityMath.addLiquidity(liquidity, int128(amount));
         } else {
             amount1 = Math.calcAmount1Delta(
@@ -201,7 +199,7 @@ contract UniswapV3Pool {
 
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
-            (step.nextTick, step.initialized) = tickBitmap.nextInitializedTickWithinOneWord(state.tick, 1, zeroForOne);
+            (step.nextTick, step.initialized) = tickBitmap.nextInitializedTickWithinOneWord(state.tick, int24(tickSpacing), zeroForOne);
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.nextTick);
 
             (state.sqrtPriceX96, step.amountIn, step.amountOut) = SwapMath.computeSwapStep(
