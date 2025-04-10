@@ -33,24 +33,16 @@ abstract contract UniswapV3PoolUtils is Test, TestUtils {
             lowerTick: tick60(lowerPrice),
             upperTick: tick60(upperPrice),
             amount: LiquidityMath.getLiquidityForAmounts(
-                sqrtP(currentPrice),
-                sqrtP60(lowerPrice),
-                sqrtP60(upperPrice),
-                amount0,
-                amount1
+                sqrtP(currentPrice), sqrtP60(lowerPrice), sqrtP60(upperPrice), amount0, amount1
             )
         });
     }
 
-    function liquidityRange(
-        uint256 lowerPrice,
-        uint256 upperPrice,
-        uint128 amount
-    ) internal pure returns (LiquidityRange memory range) {
-        range = LiquidityRange({
-            lowerTick: tick60(lowerPrice),
-            upperTick: tick60(upperPrice),
-            amount: amount
-        });
+    function liquidityRange(uint256 lowerPrice, uint256 upperPrice, uint128 amount)
+        internal
+        pure
+        returns (LiquidityRange memory range)
+    {
+        range = LiquidityRange({lowerTick: tick60(lowerPrice), upperTick: tick60(upperPrice), amount: amount});
     }
 }

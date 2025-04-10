@@ -9,7 +9,7 @@ contract UniswapV3Factory is IUniswapV3PoolDeployer {
     error TokensMustBeDifferent();
     error UnsupportedTickSpacing();
     error PoolAlreadyExists();
-    error TokenXCannotBeZero();
+    error ZeroAddressNotAllowed();
 
     event PoolCreated(address indexed token0, address indexed token1, uint24 indexed tickSpacing, address pool);
 
@@ -30,7 +30,7 @@ contract UniswapV3Factory is IUniswapV3PoolDeployer {
 
         (tokenX, tokenY) = tokenX < tokenY ? (tokenX, tokenY) : (tokenY, tokenX);
 
-        if (tokenX == address(0)) revert TokenXCannotBeZero();
+        if (tokenX == address(0)) revert ZeroAddressNotAllowed();
         if (pools[tokenX][tokenY][tickSpacing] != address(0)) revert PoolAlreadyExists();
 
         parameters = PoolParameters({factory: address(this), token0: tokenX, token1: tokenY, tickSpacing: tickSpacing});

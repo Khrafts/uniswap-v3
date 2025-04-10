@@ -199,7 +199,8 @@ contract UniswapV3Pool {
 
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
-            (step.nextTick, step.initialized) = tickBitmap.nextInitializedTickWithinOneWord(state.tick, int24(tickSpacing), zeroForOne);
+            (step.nextTick, step.initialized) =
+                tickBitmap.nextInitializedTickWithinOneWord(state.tick, int24(tickSpacing), zeroForOne);
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.nextTick);
 
             (state.sqrtPriceX96, step.amountIn, step.amountOut) = SwapMath.computeSwapStep(
